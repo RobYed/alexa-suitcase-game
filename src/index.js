@@ -32,7 +32,7 @@ let handlers = {
                 
                 // check, if items are repeated correctly
                 if ( !_areItemsCorrect(repeatedItemsArray, this.attributes['items']) ) {
-                    this.emit('GameOverIntend');
+                    this.emit('GameOverIntend', repeatedItemsArray);
                     return;
                 }
             }
@@ -53,8 +53,22 @@ let handlers = {
         
         this.emit(':ask', 'Ich packe meinen Koffer und nehme mit. ' + _getItemStringfromArray(this.attributes['items']) );
     },
-    'GameOverIntend': function() {
-        this.emit(':tell', 'Leider war das nicht richtig. Du hast verloren.');
+    'GameOverIntend': function(repeatedItemsArray) {
+        let gameOverMessage = 'Leider war das nicht richtig.';
+
+        let forgottenItems = _getForgottenItems(repeatedItemsArray, this.attributes['items']);
+        if (forgottenItems.length) {
+            gameOverMessage += ' Du hast ' + _getItemStringfromArray(forgottenItems) + ' vergessen.';
+        }
+
+        let unnecessaryItems = _getUnnecessaryItems(repeatedItemsArray, this.attributes['items']);
+        if (unnecessaryItems.length) {
+            gameOverMessage += ' ' + _getItemStringfromArray(unnecessaryItems) + ' hat niemand eingepackt.'; 
+        }
+
+        gameOverMessage += ' Du hast damit verloren.';
+        
+        this.emit(':tell', gameOverMessage);
     },
     'SessionEndedRequest': function() {
         this.emit(':tell', 'Danke fürs Spielen.');
@@ -62,12 +76,26 @@ let handlers = {
 };
 
 function _areItemsCorrect(repeatedItems, savedItems) {
+    // if length of items is not equal we can instantly stop here
     if (repeatedItems.length !== savedItems.length) {
         return false;
     }
+    // if length of items is equal we can still have forgotten and unnecessary items
+    let areItemsForgotten = _getForgottenItems(repeatedItems, savedItems).length !== 0;
+    let areItemsUnnecessary = _getUnnecessaryItems(repeatedItems, savedItems).length !== 0;
+    return !areItemsForgotten && !areItemsUnnecessary;
+}
+
+function _getForgottenItems(repeatedItems, savedItems) {
     return savedItems.filter(function(item) {
         return !repeatedItems.includes(item);
-    }).length === 0;
+    });
+}
+
+function _getUnnecessaryItems(repeatedItems, savedItems) {
+    return repeatedItems.filter(function(item) {
+        return !savedItems.includes(item);
+    });
 }
 
 function _getRandomItem() {
@@ -79,6 +107,12 @@ function _getItemArrayFromString(itemString) {
 }
 
 function _getItemStringfromArray(itemArray) {
+    if (itemArray.length === 0) {
+        return '';
+    }
+    if (itemArray.length === 1) {
+        return itemArray[0];
+    }
     let itemsWithoutLast = itemArray.slice(0, itemArray.length - 1);
     const lastItem = itemArray[itemArray.length - 1];
     return itemsWithoutLast.join(', ') + ' und ' + lastItem;
