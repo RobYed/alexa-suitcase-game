@@ -1,0 +1,6 @@
+StartSuitecaseGameIntent Spiele ich packe meinen Koffer.
+StartSuitecaseGameIntent Ich möchte ich packe meinen Koffer spielen.
+RepeatAndExtendIntent Ich packe meinen Koffer und nehme mit. {Item}
+RepeatAndExtendIntent Ich packe meinen Koffer und nehme mit. {Items} und {Item}
+RepeatAndExtendIntent Ich packe meinen Koffer und nehme {Item} mit.
+RepeatAndExtendIntent Ich packe meinen Koffer und nehme {Items} und {Item} mit.

@@ -1,0 +1,32 @@
+{
+  "intents": [
+    {
+      "intent": "StartSuitecaseGameIntent"
+    },
+    {
+      "intent": "RepeatAndExtendIntent",
+      "slots": [
+        {
+          "name": "Items",
+          "type": "SUITCASE_ITEMS"
+        },
+        {
+          "name": "Item",
+          "type": "SUITCASE_ITEM"
+        }
+      ]
+    },
+    {
+      "intent": "AMAZON.RepeatIntent"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    }
+  ]
+}
