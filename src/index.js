@@ -1,34 +1,34 @@
 'use strict';
-var Alexa = require('alexa-sdk');
-var itemList = require('./items.json').items;
+const Alexa = require('alexa-sdk');
+const itemList = require('./items.json').items;
 
-var APP_ID = 'amzn1.ask.skill.480b7029-32cb-4d29-9a9c-dac3d9c4316e';
+const APP_ID = 'amzn1.ask.skill.480b7029-32cb-4d29-9a9c-dac3d9c4316e';
 
 exports.handler = function(event, context, callback) {
-    var alexa = Alexa.handler(event, context);
+    let alexa = Alexa.handler(event, context);
     alexa.APP_ID = APP_ID;
     alexa.registerHandlers(handlers);
     alexa.execute();
 };
 
-var handlers = {
+let handlers = {
     'LaunchRequest': function () {
         this.emit('StartSuitecaseGameIntent');
     },
     'StartSuitecaseGameIntent': function () {
-        this.emit(':ask', 'Hi, schön, dass du mit mir spielen willst. Du fängst an, was nimmst du mit?');
+        this.emit(':ask', 'Schön, dass du mit mir spielen willst. Du fängst an, was nimmst du mit?');
     },
     'RepeatAndExtendIntent': function () {
-        var repeatedItems, newUserItem, newAlexaItem;
+        let repeatedItems, newUserItem, newAlexaItem;
 
         // first, check if this is the first item
         if (!this.attributes['items']) {
             this.attributes['items'] = [];
         // if it is not the first item check the repeated items
         } else {
-            var repeatedItemsSlot = this.event.request.intent.slots.Items;
+            let repeatedItemsSlot = this.event.request.intent.slots.Items;
             if (repeatedItemsSlot && repeatedItemsSlot.value) {
-                var repeatedItemsArray = _getItemArrayFromString(repeatedItemsSlot.value);
+                let repeatedItemsArray = _getItemArrayFromString(repeatedItemsSlot.value);
                 
                 // check, if items are repeated correctly
                 if ( !_areItemsCorrect(repeatedItemsArray, this.attributes['items']) ) {
@@ -39,7 +39,7 @@ var handlers = {
         }
 
         // save the user's new item to the session
-        var itemSlot = this.event.request.intent.slots.Item;
+        let itemSlot = this.event.request.intent.slots.Item;
         if (itemSlot && itemSlot.value) {
             newUserItem = itemSlot.value;
             this.attributes['items'].push(newUserItem);
@@ -66,7 +66,7 @@ function _areItemsCorrect(repeatedItems, savedItems) {
         return false;
     }
     return savedItems.filter(function(item) {
-        return repeatedItems.indexOf(item) === -1;
+        return !repeatedItems.includes(item);
     }).length === 0;
 }
 
@@ -79,7 +79,7 @@ function _getItemArrayFromString(itemString) {
 }
 
 function _getItemStringfromArray(itemArray) {
-    var itemsWithoutLast = itemArray.slice(0, itemArray.length - 1);
-    var lastItem = itemArray[itemArray.length - 1];
+    let itemsWithoutLast = itemArray.slice(0, itemArray.length - 1);
+    const lastItem = itemArray[itemArray.length - 1];
     return itemsWithoutLast.join(', ') + ' und ' + lastItem;
 }
