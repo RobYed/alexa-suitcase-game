@@ -13,12 +13,18 @@ exports.handler = function(event, context, callback) {
 
 let handlers = {
     'LaunchRequest': function () {
+        console.log('LaunchRequest');
+
         this.emit('StartSuitecaseGameIntent');
     },
     'StartSuitecaseGameIntent': function () {
+        console.log('StartSuitecaseGameIntent');
+
         this.emit(':ask', 'Schön, dass du mit mir spielen willst. Du fängst an, was nimmst du mit?');
     },
     'RepeatAndExtendIntent': function () {
+        console.log('RepeatAndExtendIntent:', this.event, this.attributes);
+
         let repeatedItems, newUserItem, newAlexaItem;
 
         // first, check if this is the first item
@@ -44,7 +50,7 @@ let handlers = {
             newUserItem = itemSlot.value;
             this.attributes['items'].push(newUserItem);
         } else {
-            console.warn('No new user item found');
+            console.warn('RepeatAndExtendIntent: No new user item found');
         }
         
         // get a new random item and save it
@@ -54,6 +60,8 @@ let handlers = {
         this.emit(':ask', 'Ich packe meinen Koffer und nehme mit. ' + _getItemStringfromArray(this.attributes['items']) );
     },
     'GameOverIntend': function(repeatedItemsArray) {
+        console.log('GameOverIntent', repeatedItemsArray, this.attributes);
+
         let gameOverMessage = 'Leider war das nicht richtig.';
 
         let forgottenItems = _getForgottenItems(repeatedItemsArray, this.attributes['items']);
@@ -71,6 +79,8 @@ let handlers = {
         this.emit(':tell', gameOverMessage);
     },
     'SessionEndedRequest': function() {
+        console.log('SessionEndedRequest');
+        
         this.emit(':tell', 'Danke fürs Spielen.');
     }
 };
