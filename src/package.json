@@ -4,7 +4,9 @@
   "description": "Play 'I packed my bag' with Amazon Alexa",
   "main": "index.js",
   "scripts": {
-    "deploy": "zip -r lambda.zip .",
+    "predeploy": "rm -rf node_modules && npm i --production # get sure only production dependencies are included",
+    "deploy": "zip -r lambda.zip . # create a zip file for upload to AWS Lambda",
+    "postdeploy": "npm install # add missing devDependencies",
     "test": "mocha *.spec.js"
   },
   "repository": {
@@ -23,7 +25,8 @@
   },
   "homepage": "https://github.com/RobYed/alexa-suitcase-game#README",
   "dependencies": {
-    "alexa-sdk": "^1.0.7"
+    "alexa-sdk": "^1.0.7",
+    "aws-sdk": "^2.40.0"
   },
   "devDependencies": {
     "bespoken-tools": "^0.9.35",
