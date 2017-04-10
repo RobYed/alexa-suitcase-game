@@ -1,17 +1,22 @@
 'use strict';
 const Alexa = require('alexa-sdk');
-const itemList = require('./items.json').items;
+const AWS = require('aws-sdk');
 
 const APP_ID = 'amzn1.ask.skill.480b7029-32cb-4d29-9a9c-dac3d9c4316e';
+
+const dynamoDB = new AWS.DynamoDB.DocumentClient({apiVersion: '2012-08-10'});
+
+let itemList;
 
 exports.handler = function(event, context, callback) {
     let alexa = Alexa.handler(event, context);
     alexa.APP_ID = APP_ID;
     alexa.registerHandlers(handlers);
-    alexa.execute();
+    
+    _initItemList( () => alexa.execute() );
 };
 
-let handlers = {
+const handlers = {
     'LaunchRequest': function () {
         console.log('LaunchRequest');
 
@@ -44,20 +49,22 @@ let handlers = {
             }
         }
 
-        // save the user's new item to the session
+        // save the user's new item to the session and dynamodb
         let itemSlot = this.event.request.intent.slots.Item;
         if (itemSlot && itemSlot.value) {
             newUserItem = itemSlot.value;
             this.attributes['items'].push(newUserItem);
+            _saveUserItem(newUserItem, this.event.session.user.userId, this.event.request.locale, () => {
+                // get a new random item and save it
+                newAlexaItem = _getRandomItem();
+                this.attributes['items'].push(newAlexaItem);
+
+                this.emit(':ask', 'Ich packe meinen Koffer und nehme mit. ' + _getItemStringfromArray(this.attributes['items']) );
+            });
         } else {
             console.warn('RepeatAndExtendIntent: No new user item found');
         }
         
-        // get a new random item and save it
-        newAlexaItem = _getRandomItem();
-        this.attributes['items'].push(newAlexaItem);
-        
-        this.emit(':ask', 'Ich packe meinen Koffer und nehme mit. ' + _getItemStringfromArray(this.attributes['items']) );
     },
     'GameOverIntend': function(repeatedItemsArray) {
         console.log('GameOverIntent', repeatedItemsArray, this.attributes);
@@ -82,8 +89,73 @@ let handlers = {
         console.log('SessionEndedRequest');
 
         this.emit(':tell', 'Danke fürs Spielen.');
+    },
+    'Unhandled': function() {
+        console.log('Unhandled', this.event, this.error);
+    },
+    'AMAZON.HelpIntent': function () {    
+        console.log('AMAZON.HelpIntent');
+
+        this.emit(':tell', 'Sage "Ich packe meinen Koffer und nehme mit" und dann das, was du einpacken möchtest.');
+    },
+    'AMAZON.StopIntent': function () {
+        console.log('AMAZON.StepIntent');
+
+        this.emit(':tell', 'Danke fürs Spielen.');
+    },
+    'AMAZON.CancelIntent': function () {
+        console.log('AMAZON.CancelIntent');
+
+        this.emit(':tell', 'Danke fürs Spielen.');
     }
 };
+
+function _initItemList(callback) {
+
+    const params = {
+        TableName: 'Items',
+        AttributesToGet: ['name'],
+        ReturnConsumedCapacity: 'INDEXES'
+    };
+
+    console.log('_initItemList', params);
+
+    dynamoDB.scan(params, function(err, data) {
+        if (err) {
+            console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
+        } else {
+            console.log("scan succeeded:", data);
+            itemList = data.Items;
+        }
+        callback();
+    });
+}
+
+function _saveUserItem(item, userId, locale, callback) {
+
+    let currentTime = new Date().toISOString();
+
+    const params = {
+        TableName: 'UserItems',
+        Item: {
+            'name': item,
+            'userId': userId,
+            'timestamp': currentTime,
+            'locale': locale
+        }
+    };
+
+    console.log('_saveUserItem', params);
+
+    dynamoDB.put(params, function(err, data) {
+        if (err) {
+            console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
+        } else {
+            console.log("Added item:", JSON.stringify(data, null, 2));
+        }
+        callback();
+    });
+}
 
 function _areItemsCorrect(repeatedItems, savedItems) {
     // if length of items is not equal we can instantly stop here
@@ -109,7 +181,7 @@ function _getUnnecessaryItems(repeatedItems, savedItems) {
 }
 
 function _getRandomItem() {
-    return itemList[ Math.floor(Math.random() * itemList.length) ];
+    return itemList[ Math.floor(Math.random() * itemList.length) ].name;
 }
 
 function _getItemArrayFromString(itemString) {
